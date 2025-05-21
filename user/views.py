@@ -52,14 +52,22 @@ def hospital_info(request):
     # 병원 정보 등록/수정
     if request.method == "POST":
         data = request.data
-        register = Hospital(user_id=data.get('user_id'), hosp_name=data.get('hosp_name'), hosp_id=data.get('hosp_id'), doctor_name=data.get('doctor_name'))
-        register.save()
-        res = register.save()
-
-        if res.status_code == 200:
-            return HttpResponse(res.json())
+        register = Hospital(
+            user_id=data.get('user_id'),
+            hosp_id=data.get('hosp_id'),
+            hosp_name=data.get('hosp_name'),
+            hosp_type=data.get('hosp_type'),
+            doctor_name=data.get('doctor_name')
+        )
+        response = Hospital.add_unique_constraint(
+            ['user_id', 'hosp_id', 'hosp_name'],
+            "이미 등록된 병원입니다."
+        )
+        if response.status_code == 200:
+            register.save()
+            return response
         else:
-            return HttpResponse(res.status_code)
+            return response.data
 
     # 병원 정보 삭제
     if request.method == "DELETE":
@@ -81,16 +89,25 @@ def illness_info(request):
     # 질병/증상 정보 등록/수정
     if request.method == "POST":
         data = request.data
-        register = Illness(user_id=data.get('user_id'), ill_type=data.get('ill_type'), ill_id=data.get('ill_id'), ill_name=data.get('ill_name'), ill_start=data.get('ill_start'), ill_end=data.get('ill_end'))
-        register.save()
-        res = register.save()
-
-        if res.status_code == 200:
-            return HttpResponse(res.json())
+        register = Illness(
+            user_id=data.get('user_id'),
+            ill_type=data.get('ill_type'),
+            ill_id=data.get('ill_id'),
+            ill_name=data.get('ill_name'),
+            ill_start=data.get('ill_start'),
+            ill_end=data.get('ill_end')
+        )
+        response = Illness.add_unique_constraint(
+            ['user_id', 'ill_id', 'ill_name'],
+            "이미 등록된 질병/증상입니다."
+        )
+        if response.status_code == 200:
+            register.save()
+            return response
         else:
-            return HttpResponse(res.status_code)
+            return response.data
 
     # 질병/증상 정보 삭제
     if request.method == "DELETE":
-        return None
-    return None
+        return HttpResponse("DELETE")
+    return HttpResponse("ILLNESS_RETURN")
