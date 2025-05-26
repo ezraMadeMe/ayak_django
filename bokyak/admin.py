@@ -1,7 +1,9 @@
 from django.contrib import admin
-from bokyak.models import Bokyak, BokyakRecord, BokyakGroup, BokyakCycle
+from bokyak.models import MedicationAlert, MedicationRecord, \
+    MedicationDetail, MedicationCycle, MedicationGroup
 
-admin.site.register(Bokyak)
-admin.site.register(BokyakGroup)
-admin.site.register(BokyakRecord)
-admin.site.register(BokyakCycle)
+admin.site.register(MedicationGroup)
+admin.site.register(MedicationCycle)
+admin.site.register(MedicationDetail)
+admin.site.register(MedicationRecord)
+admin.site.register(MedicationAlert)
