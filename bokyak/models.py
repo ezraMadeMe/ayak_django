@@ -1,6 +1,6 @@
 from django.db.models import UniqueConstraint
 
-from user.models import BaseModel, CodeGeneratorMixin, UserMedicalInfo
+from user.models import BaseModel, CodeGeneratorMixin
 from django.db import models
 
 class MedicationGroup(BaseModel, CodeGeneratorMixin):
