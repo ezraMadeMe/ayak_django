@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models import UniqueConstraint
 from rest_framework.exceptions import ValidationError
 
-from bokyak.models.prescription import Prescription
+# from bokyak.models.prescription import Prescription
 from common.models.base_model import BaseModel
 from user.models.hospital import Hospital
 from user.models.illness import Illness
@@ -40,7 +40,7 @@ class UserMedicalInfo(BaseModel):
         verbose_name='질병/증상'
     )
     prescription = models.ForeignKey(
-        Prescription,
+        'bokyak.Prescription',
         on_delete=models.CASCADE,
         related_name='user_prescription',
         verbose_name='처방전(is_active=True인 처방이 업데이트)'

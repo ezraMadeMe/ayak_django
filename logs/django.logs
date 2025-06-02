@@ -1,0 +1,44 @@
+INFO 2025-06-02 12:31:13,083 autoreload Watching for file changes with StatReloader
+INFO 2025-06-02 12:31:32,457 basehttp "GET /admin/ HTTP/1.1" 302 0
+INFO 2025-06-02 12:31:32,555 basehttp "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4173
+INFO 2025-06-02 12:31:32,586 basehttp "GET /static/admin/css/base.css HTTP/1.1" 304 0
+INFO 2025-06-02 12:31:32,587 basehttp "GET /static/admin/css/dark_mode.css HTTP/1.1" 304 0
+INFO 2025-06-02 12:31:32,589 basehttp "GET /static/admin/css/responsive.css HTTP/1.1" 304 0
+INFO 2025-06-02 12:31:32,589 basehttp "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 304 0
+INFO 2025-06-02 12:31:32,590 basehttp "GET /static/admin/css/login.css HTTP/1.1" 304 0
+INFO 2025-06-02 12:31:32,590 basehttp "GET /static/admin/js/theme.js HTTP/1.1" 304 0
+INFO 2025-06-02 12:31:32,597 basehttp "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 304 0
+WARNING 2025-06-02 12:31:32,632 log Not Found: /favicon.ico
+WARNING 2025-06-02 12:31:32,633 basehttp "GET /favicon.ico HTTP/1.1" 404 3010
+INFO 2025-06-02 12:31:39,063 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+INFO 2025-06-02 12:31:39,094 basehttp "GET /admin/ HTTP/1.1" 200 20838
+INFO 2025-06-02 12:31:39,211 basehttp "GET /static/admin/css/dashboard.css HTTP/1.1" 200 441
+INFO 2025-06-02 12:31:39,212 basehttp "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 331
+INFO 2025-06-02 12:31:39,215 basehttp "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 380
+INFO 2025-06-02 12:31:48,167 basehttp "GET /admin/user/ayakuser/add/ HTTP/1.1" 200 22232
+INFO 2025-06-02 12:31:48,192 basehttp "GET /static/admin/css/forms.css HTTP/1.1" 200 8525
+INFO 2025-06-02 12:31:48,200 basehttp "GET /static/admin/js/jquery.init.js HTTP/1.1" 200 347
+INFO 2025-06-02 12:31:48,200 basehttp "GET /static/admin/js/core.js HTTP/1.1" 200 6208
+INFO 2025-06-02 12:31:48,201 basehttp "GET /static/admin/js/calendar.js HTTP/1.1" 200 9141
+INFO 2025-06-02 12:31:48,201 basehttp "GET /static/admin/js/admin/DateTimeShortcuts.js HTTP/1.1" 200 19319
+INFO 2025-06-02 12:31:48,207 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-06-02 12:31:48,209 basehttp "GET /static/admin/css/widgets.css HTTP/1.1" 200 11991
+INFO 2025-06-02 12:31:48,212 basehttp "GET /static/admin/js/actions.js HTTP/1.1" 200 8076
+INFO 2025-06-02 12:31:48,212 basehttp "GET /static/admin/js/urlify.js HTTP/1.1" 200 7887
+INFO 2025-06-02 12:31:48,213 basehttp "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 200 9777
+INFO 2025-06-02 12:31:48,215 basehttp "GET /static/admin/js/prepopulate.js HTTP/1.1" 200 1531
+INFO 2025-06-02 12:31:48,219 basehttp "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 200 586
+INFO 2025-06-02 12:31:48,228 basehttp "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 200 285314
+INFO 2025-06-02 12:31:48,246 basehttp "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 200 325171
+INFO 2025-06-02 12:31:48,264 basehttp "GET /static/admin/js/change_form.js HTTP/1.1" 200 606
+INFO 2025-06-02 12:31:48,338 basehttp "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 200 1086
+INFO 2025-06-02 12:31:48,338 basehttp "GET /static/admin/img/icon-clock.svg HTTP/1.1" 200 677
+INFO 2025-06-02 12:31:51,578 basehttp "GET /admin/user/ayakuser/ HTTP/1.1" 200 20725
+INFO 2025-06-02 12:31:51,600 basehttp "GET /static/admin/img/search.svg HTTP/1.1" 200 458
+INFO 2025-06-02 12:31:51,603 basehttp "GET /static/admin/css/changelists.css HTTP/1.1" 200 6878
+INFO 2025-06-02 12:31:51,604 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-06-02 12:31:51,613 basehttp "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+INFO 2025-06-02 12:31:51,625 basehttp "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 331
+INFO 2025-06-02 12:31:51,626 basehttp "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+INFO 2025-06-02 12:41:56,704 autoreload C:\Users\admin\PycharmProjects\yakun\bokyak\models\__init__.py changed, reloading.
+INFO 2025-06-02 12:41:57,699 autoreload Watching for file changes with StatReloader

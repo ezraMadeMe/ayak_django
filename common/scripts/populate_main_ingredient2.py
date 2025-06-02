@@ -18,17 +18,15 @@ from decimal import Decimal, InvalidOperation
 from collections import defaultdict
 import django; django.setup()
 
-from user.models import MainIngredient
-
 # Django 설정
 if __name__ == "__main__":
     # Django 설정 파일 경로 설정 (프로젝트에 맞게 수정)
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ayak.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'yakun.settings')
     django.setup()
 
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
-  # 실제 앱 이름으로 변경
+from user.models import MainIngredient  # 실제 앱 이름으로 변경
 
 # 로깅 설정
 logging.basicConfig(

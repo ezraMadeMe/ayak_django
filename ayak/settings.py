@@ -24,7 +24,8 @@ environ.Env.read_env(
     env_file=os.path.join(BASE_DIR, ".env")
 )
 
-KAKAO=env("KAKAO")
+KAKAO=env("KAKAO_NATIVE")
+KAKAO_JS=env("KAKAO_JAVASCRIPT")
 KAKAO_SECRET=env("KAKAO_SECRET")
 KAKAO_ADMIN=env("KAKAO_ADMIN")
 HOSPITAL=env("HOSPITAL")
@@ -75,8 +76,8 @@ INSTALLED_APPS = [
     'bokyak'
 ]
 
-ROOT_URLCONF = 'config.urls'
-# ROOT_URLCONF = 'ayak.urls'
+# ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = 'ayak.urls'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -211,7 +212,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.logs'),
             'formatter': 'verbose',
         },
     },
