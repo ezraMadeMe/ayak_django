@@ -1,19 +1,18 @@
-# bokyak/views/medication_record.py
+# bokyak/views/medication_data_serializer.py
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from datetime import timedelta
 from bokyak.models.medication_record import MedicationRecord, MedicationDetail
-from bokyak.serializers import MedicationRecordSerializer, CreateMedicationRecordSerializer
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.utils import timezone
 from datetime import datetime, date
-import json
 
-from bokyak.serializers.medication_record import HomeDataSerializer
-from bokyak.services.check_medication_service import MedicationService
+from bokyak.serializers import HomeDataSerializer
+from bokyak.serializers.medication_info_serializer import MedicationRecordSerializer, CreateMedicationRecordSerializer
+from bokyak.services.check_dosage_service import CheckDosageService
 
 
 @api_view(['GET'])
@@ -40,7 +39,7 @@ def get_today_medications(request):
         group_id = request.GET.get('group_id')
 
         # 비즈니스 로직 호출
-        medication_data = MedicationService.get_today_medication_groups(user_id, target_date)
+        medication_data = CheckDosageService.get_today_medication_groups(user_id, target_date)
 
         # 특정 그룹만 필터링
         if group_id:
@@ -99,7 +98,7 @@ def get_next_dosage_time(request):
             current_date = current_date + timezone.timedelta(days=1)
 
         # 해당 시간대의 복약 데이터 조회
-        medication_data = MedicationService.get_today_medication_groups(user_id, current_date)
+        medication_data = CheckDosageService.get_today_medication_groups(user_id, current_date)
 
         next_medications = []
         for group in medication_data['medication_groups']:
@@ -152,7 +151,7 @@ def create_medication_record(request):
                 }, status=status.HTTP_400_BAD_REQUEST)
 
         # 복약 기록 생성
-        record = MedicationService.create_medication_record(
+        record = CheckDosageService.create_medication_record(
             user_id=user_id,
             medication_detail_id=data['medication_detail_id'],
             record_type=data['record_type'],
@@ -215,7 +214,7 @@ def bulk_create_medication_records(request):
 
         for record_data in records_data:
             try:
-                record = MedicationService.create_medication_record(
+                record = CheckDosageService.create_medication_record(
                     user_id=user_id,
                     medication_detail_id=record_data['medication_detail_id'],
                     record_type=record_data['record_type'],

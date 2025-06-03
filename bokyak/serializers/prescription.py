@@ -3,7 +3,8 @@ from rest_framework import serializers
 
 from bokyak.models.prescription import Prescription
 from bokyak.models.prescription_medication import PrescriptionMedication
-from bokyak.serializers.serializer import MedicationGroupSerializer
+from bokyak.serializers.medication_info_serializer import MedicationGroupSerializer
+
 from user.models import UserMedicalInfo
 
 
@@ -40,10 +41,10 @@ class PrescriptionDetailSerializer(PrescriptionSerializer):
 
     class Meta(PrescriptionSerializer.Meta):
         fields = PrescriptionSerializer.Meta.fields + ['medication_groups']
-
-    def get_medication_groups(self, obj):
-        from .medication_group import MedicationGroupSerializer
-        return MedicationGroupSerializer(obj.medication_groups.all(), many=True).data
+    #
+    # def get_medication_groups(self, obj):
+    #     from .medication_group import MedicationGroupSerializer
+    #     return MedicationGroupSerializer(obj.medication_groups.all(), many=True).data
 
 
 # 처방전 생성용 시리얼라이저

@@ -42,3 +42,105 @@ INFO 2025-06-02 12:31:51,625 basehttp "GET /static/admin/img/tooltag-add.svg HTT
 INFO 2025-06-02 12:31:51,626 basehttp "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
 INFO 2025-06-02 12:41:56,704 autoreload C:\Users\admin\PycharmProjects\yakun\bokyak\models\__init__.py changed, reloading.
 INFO 2025-06-02 12:41:57,699 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 09:12:06,132 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 09:12:37,805 autoreload C:\Users\raez\PycharmProjects\yakun\ayak\urls.py changed, reloading.
+INFO 2025-06-03 09:12:38,516 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 09:13:00,828 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\serializers\prescription.py changed, reloading.
+INFO 2025-06-03 09:13:01,667 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 09:27:47,047 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\serializers\__init__.py changed, reloading.
+INFO 2025-06-03 09:27:47,791 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 09:32:02,711 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\serializers\medication_info_serializer.py changed, reloading.
+INFO 2025-06-03 09:32:03,424 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 09:32:41,427 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\urls.py changed, reloading.
+INFO 2025-06-03 09:32:42,166 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 10:47:33,339 basehttp "GET /admin/user/ayakuser/ HTTP/1.1" 200 22900
+INFO 2025-06-03 10:47:33,374 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO 2025-06-03 11:11:27,703 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\urls.py changed, reloading.
+INFO 2025-06-03 11:11:28,509 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 12:48:09,468 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\services\check_dosage_service.py changed, reloading.
+INFO 2025-06-03 12:48:10,193 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 12:51:07,630 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\serializers\medication_info_serializer.py changed, reloading.
+INFO 2025-06-03 12:51:08,328 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 12:51:53,670 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\serializers\medication_info_serializer.py changed, reloading.
+INFO 2025-06-03 12:51:54,415 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 12:52:46,107 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\serializers\medication_info_serializer.py changed, reloading.
+INFO 2025-06-03 12:52:46,857 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 12:54:20,436 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\serializers\medication_info_serializer.py changed, reloading.
+INFO 2025-06-03 12:54:21,141 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 13:41:56,514 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\urls.py changed, reloading.
+INFO 2025-06-03 13:41:57,244 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 14:30:45,918 autoreload C:\Users\raez\PycharmProjects\yakun\bokyak\urls.py changed, reloading.
+INFO 2025-06-03 14:30:46,796 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 14:32:32,210 autoreload C:\Users\raez\PycharmProjects\yakun\user\services\user_register_service.py changed, reloading.
+INFO 2025-06-03 14:32:32,995 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 14:35:44,519 autoreload C:\Users\raez\PycharmProjects\yakun\user\models\ayakuser.py changed, reloading.
+INFO 2025-06-03 14:35:45,284 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 15:05:09,990 autoreload C:\Users\raez\PycharmProjects\yakun\user\urls.py changed, reloading.
+INFO 2025-06-03 15:05:10,762 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 17:00:46,437 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 17:02:13,786 basehttp code 400, message Bad request version ('\x02h2\x08http/1.1\x00')
+ERROR 2025-06-03 17:02:13,786 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-06-03 17:02:13,788 basehttp code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01\x00#\x00\x00\x00\x05\x00\x05\x01\x00\x00\x00\x00\x00')
+ERROR 2025-06-03 17:02:13,828 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:02:13,828 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-06-03 17:02:13,829 basehttp code 400, message Bad request version ('\x00\x02\x01\x00\x00#\x00\x00\x00')
+ERROR 2025-06-03 17:02:13,829 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:02:27,270 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:02:27,273 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:02:27,275 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:02:27,277 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:02:31,495 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:02:31,497 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:02:31,499 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:02:31,501 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-06-03 17:05:51,300 autoreload Watching for file changes with StatReloader
+INFO 2025-06-03 17:06:43,585 basehttp code 400, message Bad request version ('\x00\x12\x00\x10\x04\x03\x08\x04\x04\x01\x05\x03\x08\x05\x05\x01\x08\x06\x06\x01\x00')
+ERROR 2025-06-03 17:06:43,585 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:06:43,590 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:06:43,592 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:06:43,594 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:08:01,295 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:08:01,297 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-06-03 17:08:01,298 basehttp code 400, message Bad request version ('\x02h2\x08http/1.1\x00')
+ERROR 2025-06-03 17:08:01,298 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:08:01,299 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-06-03 17:09:51,839 basehttp code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x06')
+ERROR 2025-06-03 17:09:51,839 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:09:51,862 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:09:51,864 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-06-03 17:09:51,864 basehttp code 400, message Bad HTTP/0.9 request type ('\x16\x03\x01\x06')
+ERROR 2025-06-03 17:09:51,864 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:10:14,587 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:10:14,589 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:10:14,592 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+ERROR 2025-06-03 17:10:14,594 basehttp You're accessing the development server over HTTPS, but it only supports HTTP.
+INFO 2025-06-03 20:57:24,647 basehttp "GET /admin/ HTTP/1.1" 302 0
+INFO 2025-06-03 20:57:24,677 basehttp "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4184
+INFO 2025-06-03 20:57:24,704 basehttp "GET /static/admin/css/base.css HTTP/1.1" 304 0
+INFO 2025-06-03 20:57:24,704 basehttp "GET /static/admin/css/dark_mode.css HTTP/1.1" 304 0
+INFO 2025-06-03 20:57:24,705 basehttp "GET /static/admin/js/theme.js HTTP/1.1" 304 0
+INFO 2025-06-03 20:57:24,706 basehttp "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 304 0
+INFO 2025-06-03 20:57:24,706 basehttp "GET /static/admin/css/responsive.css HTTP/1.1" 304 0
+INFO 2025-06-03 20:57:24,711 basehttp "GET /static/admin/css/login.css HTTP/1.1" 304 0
+INFO 2025-06-03 20:57:24,719 basehttp "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 304 0
+INFO 2025-06-03 20:57:26,662 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+INFO 2025-06-03 20:57:26,681 basehttp "GET /admin/ HTTP/1.1" 200 20847
+INFO 2025-06-03 20:57:26,703 basehttp "GET /static/admin/css/dashboard.css HTTP/1.1" 304 0
+INFO 2025-06-03 20:57:26,707 basehttp "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 304 0
+INFO 2025-06-03 20:57:26,707 basehttp "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 304 0
+ERROR 2025-06-03 20:58:15,862 log Internal Server Error: /api/v1/user/auth/login
+Traceback (most recent call last):
+  File "C:\Users\raez\PycharmProjects\yakun\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\raez\PycharmProjects\yakun\.venv\Lib\site-packages\django\utils\deprecation.py", line 122, in __call__
+    response = self.process_response(request, response)
+  File "C:\Users\raez\PycharmProjects\yakun\.venv\Lib\site-packages\django\middleware\common.py", line 108, in process_response
+    return self.response_redirect_class(self.get_full_path_with_slash(request))
+                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "C:\Users\raez\PycharmProjects\yakun\.venv\Lib\site-packages\django\middleware\common.py", line 87, in get_full_path_with_slash
+    raise RuntimeError(
+    ...<9 lines>...
+    )
+RuntimeError: You called this URL via POST, but the URL doesn't end in a slash and you have APPEND_SLASH set. Django can't redirect to the slash URL while maintaining POST data. Change your form to point to 172.30.1.57:8000/api/v1/user/auth/login/ (note the trailing slash), or set APPEND_SLASH=False in your Django settings.
+ERROR 2025-06-03 20:58:15,863 basehttp "POST /api/v1/user/auth/login HTTP/1.1" 500 20443
+INFO 2025-06-03 21:08:25,955 autoreload C:\Users\raez\PycharmProjects\yakun\ayak\settings.py changed, reloading.

@@ -47,8 +47,13 @@ SECRET_KEY = 'django-insecure-=)r)1t_&oa$xkgm-tm_ei*6vls--54^9ed3t=rai%54os@f_2y
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
-
+# 보안 설정
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '172.30.1.57',
+    '0.0.0.0',
+]
 
 # Application definition
 
@@ -88,6 +93,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'yakun.middleware.RequestLoggingMiddleware',  # 커스텀 로깅 미들웨어
 ]
 
 SOCIALACCOUNT_PROVIDERS ={
@@ -128,13 +134,16 @@ WSGI_APPLICATION = 'ayak.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# 데이터베이스 인코딩 설정
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -157,13 +166,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
-
+# 인코딩 관련 설정 추가
+LANGUAGE_CODE = 'ko-kr'
+TIME_ZONE = 'Asia/Seoul'
 USE_I18N = True
-
 USE_TZ = True
+
 
 
 # Static files (CSS, JavaScript, Images)
@@ -198,39 +207,96 @@ REST_FRAMEWORK = {
 CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = config('REDIS_URL', default='redis://localhost:6379/0')
 
-# 로깅 설정
+
+
+# 파일 인코딩 설정
+DEFAULT_CHARSET = 'utf-8'
+FILE_CHARSET = 'utf-8'
+
+# 로깅 설정 (한글 인코딩 문제 해결)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
             'style': '{',
         },
     },
     'handlers': {
-        'file': {
+        'console': {
             'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django.logs'),
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+            'stream': 'ext://sys.stdout',  # UTF-8 출력 강제
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'django.log'),
+            'maxBytes': 1024*1024*5,  # 5MB
+            'backupCount': 5,
             'formatter': 'verbose',
+            'encoding': 'utf-8',  # 파일 로그 인코딩
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': True,
         },
-        'user': {
-            'handlers': ['file'],
+        'django.server': {
+            'handlers': ['console'],
             'level': 'INFO',
-            'propagate': True,
+            'propagate': False,
         },
-        'bokyak': {
-            'handlers': ['file'],
-            'level': 'INFO',
+        'yakun': {  # 실제 앱 이름으로 변경
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
             'propagate': True,
         },
     },
 }
+
+# CORS 설정 (Flutter에서 API 호출 시 필요)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://172.30.1.57:8000",
+    "http://172.30.1.57:8080",
+]
+
+CORS_ALLOW_ALL_ORIGINS = True  # 개발용 (운영에서는 False로 설정)
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# API 버전 설정
+API_VERSION = 'v1'
+
+
+
+
