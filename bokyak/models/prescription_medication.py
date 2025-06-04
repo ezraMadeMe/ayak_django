@@ -1,3 +1,4 @@
+from bokyak.models import MedicationGroup
 from bokyak.models.prescription import Prescription
 from user.models import Medication
 from user.models.user_medical_info import BaseModel
@@ -16,7 +17,12 @@ class PrescriptionMedication(BaseModel):
             models.Index(fields=['prescription'], name='idx_presc_med_prescription'),
             models.Index(fields=['medication'], name='idx_presc_med_medication'),
         ]
-
+    group = models.ForeignKey(
+        MedicationGroup,
+        on_delete=models.CASCADE,
+        related_name='prescribed_group',
+        verbose_name='관련 복약그룹'
+    )
     prescription = models.ForeignKey(
         Prescription,
         on_delete=models.CASCADE,
