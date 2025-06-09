@@ -3,19 +3,18 @@ from rest_framework.routers import DefaultRouter
 
 
 from .views import (
-    PrescriptionViewSet, MedicationGroupViewSet, MedicationCycleViewSet,
+    PrescriptionViewSet, MedicationGroupViewSet,
     MedicationDetailViewSet, MedicationRecordViewSet, MedicationAlertViewSet
 )
 from .views.check_dosage_view import get_today_medications, get_next_dosage_time, get_medication_records, \
     create_medication_record, bulk_create_medication_records
-from .views.prescription_renewal import PrescriptionRenewalAPI, CycleExpirationCheckAPI
+from .views.prescription_renewal import PrescriptionRenewalAPI
 
 app_name = 'bokyak'
 
 router = DefaultRouter()
 router.register(r'prescriptions', PrescriptionViewSet, basename='prescription')
 router.register(r'groups', MedicationGroupViewSet, basename='medication-group')
-router.register(r'cycles', MedicationCycleViewSet, basename='medication-cycle')
 router.register(r'details', MedicationDetailViewSet, basename='medication-detail')
 router.register(r'records', MedicationRecordViewSet, basename='medication-record')
 router.register(r'alerts', MedicationAlertViewSet, basename='medication-alert')
@@ -24,7 +23,6 @@ urlpatterns = [
     path('', include(router.urls)),
 
     path('prescriptions/renew/', PrescriptionRenewalAPI.as_view(), name='prescription-renew'),
-    path('cycles/expiration-check/<str:user_id>/', CycleExpirationCheckAPI.as_view(), name='cycle-expiration-check'),
     # 복약 관련 API
     path('medications/today/', get_today_medications, name='get_today_medications'),
     path('medications/next-dosage/', get_next_dosage_time, name='get_next_dosage_time'),

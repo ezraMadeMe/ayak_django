@@ -6,14 +6,40 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import transaction
 import logging
-
-from user.serializers.user_register_serializer import UserProfileSerializer, UserLoginSerializer, \
-    UserRegistrationSerializer
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 from user.services.user_register_service import UserService
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+def validate_registration_data(data):
+    errors = {}
+    required_fields = ['user_name', 'email', 'password', 'confirm_password']
+    
+    # 필수 필드 검증
+    for field in required_fields:
+        if not data.get(field):
+            errors[field] = f"{field}는 필수 입력 항목입니다."
+    
+    if errors:
+        return errors
+    
+    # 이메일 형식 검증
+    try:
+        validate_email(data['email'])
+    except ValidationError:
+        errors['email'] = "유효한 이메일 주소를 입력해주세요."
+    
+    # 이메일 중복 검증
+    if User.objects.filter(email=data['email']).exists():
+        errors['email'] = "이미 사용 중인 이메일입니다."
+    
+    # 비밀번호 일치 검증
+    if data['password'] != data['confirm_password']:
+        errors['password'] = "비밀번호가 일치하지 않습니다."
+    
+    return errors
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -36,21 +62,44 @@ def register_user(request):
     }
     """
     try:
-        serializer = UserRegistrationSerializer(data=request.data)
-
-        if not serializer.is_valid():
+        # 데이터 검증
+        validation_errors = validate_registration_data(request.data)
+        if validation_errors:
             return Response({
                 'success': False,
                 'message': '입력 데이터가 올바르지 않습니다.',
-                'errors': serializer.errors
+                'errors': validation_errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # 회원가입 처리
         with transaction.atomic():
-            result = UserService.register_user(serializer.validated_data)
+            user_data = {
+                'user_name': request.data['user_name'],
+                'email': request.data['email'],
+                'password': request.data['password'],
+                'phone_number': request.data.get('phone_number'),
+                'birth_date': request.data.get('birth_date'),
+                'gender': request.data.get('gender'),
+                'push_agree': request.data.get('push_agree', False),
+                'notification_enabled': request.data.get('notification_enabled', False),
+                'marketing_agree': request.data.get('marketing_agree', False)
+            }
+            result = UserService.register_user(user_data)
 
-        # 사용자 프로필 시리얼라이저
-        user_serializer = UserProfileSerializer(result['user'])
+        # 사용자 데이터 준비
+        user_data = {
+            'user_id': result['user'].user_id,
+            'user_name': result['user'].user_name,
+            'email': result['user'].email,
+            'phone_number': result['user'].phone_number,
+            'birth_date': result['user'].birth_date,
+            'gender': result['user'].gender,
+            'push_agree': result['user'].push_agree,
+            'notification_enabled': result['user'].notification_enabled,
+            'marketing_agree': result['user'].marketing_agree,
+            'created_at': result['user'].created_at.isoformat() if result['user'].created_at else None,
+            'updated_at': result['user'].updated_at.isoformat() if result['user'].updated_at else None
+        }
 
         logger.info(f"새 사용자 회원가입: {result['user'].user_id}")
 
@@ -58,7 +107,7 @@ def register_user(request):
             'success': True,
             'message': '회원가입이 완료되었습니다.',
             'data': {
-                'user': user_serializer.data,
+                'user': user_data,
                 'access_token': result['access_token'],
                 'refresh_token': result['refresh_token'],
                 'is_new_user': result['is_new_user']
@@ -72,6 +121,24 @@ def register_user(request):
             'message': f'회원가입 실패: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+def validate_login_data(data):
+    errors = {}
+    
+    # 소셜 로그인
+    if data.get('social_provider'):
+        required_fields = ['social_provider', 'social_id', 'social_token']
+        for field in required_fields:
+            if not data.get(field):
+                errors[field] = f"{field}는 필수 입력 항목입니다."
+    # 일반 로그인
+    else:
+        if not data.get('user_id'):
+            errors['user_id'] = "사용자 ID는 필수 입력 항목입니다."
+        if not data.get('password'):
+            errors['password'] = "비밀번호는 필수 입력 항목입니다."
+    
+    return errors
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -96,24 +163,41 @@ def login_user(request):
     }
     """
     try:
-        serializer = UserLoginSerializer(data=request.data)
-
-        if not serializer.is_valid():
+        # 데이터 검증
+        validation_errors = validate_login_data(request.data)
+        if validation_errors:
             return Response({
                 'success': False,
                 'message': '로그인 정보가 올바르지 않습니다.',
-                'errors': serializer.errors
+                'errors': validation_errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # 로그인 처리
         with transaction.atomic():
-            result = UserService.login_user(serializer.validated_data)
+            result = UserService.login_user(request.data)
 
-        # 사용자 프로필 시리얼라이저
-        user_serializer = UserProfileSerializer(result['user'])
+        # 사용자 데이터 준비
+        user_data = {
+            'user_id': result['user'].user_id,
+            'user_name': result['user'].user_name,
+            'email': result['user'].email,
+            'phone_number': result['user'].phone_number,
+            'birth_date': result['user'].birth_date,
+            'gender': result['user'].gender,
+            'push_agree': result['user'].push_agree,
+            'notification_enabled': result['user'].notification_enabled,
+            'marketing_agree': result['user'].marketing_agree,
+            'created_at': result['user'].created_at.isoformat() if result['user'].created_at else None,
+            'updated_at': result['user'].updated_at.isoformat() if result['user'].updated_at else None
+        }
 
         login_type = "소셜 로그인" if request.data.get('social_provider') else "일반 로그인"
         user_status = "신규 사용자" if result['is_new_user'] else "기존 사용자"
+
+        if login_type == "소셜 로그인":
+            user_data.setdefault('social_id', result['user'].social_id)
+            user_data.setdefault('social_token', result['user'].social_token)
+            user_data.setdefault('social_provider', result['user'].social_provider)
 
         logger.info(f"{login_type} 성공: {result['user'].user_id} ({user_status})")
 
@@ -121,7 +205,7 @@ def login_user(request):
             'success': True,
             'message': f'{login_type} 성공',
             'data': {
-                'user': user_serializer.data,
+                'user': user_data,
                 'access_token': result['access_token'],
                 'refresh_token': result['refresh_token'],
                 'is_new_user': result['is_new_user']
@@ -144,12 +228,24 @@ def get_user_profile(request):
     """
     try:
         user = request.user
-        serializer = UserProfileSerializer(user)
+        user_data = {
+            'user_id': user.user_id,
+            'user_name': user.user_name,
+            'email': user.email,
+            'phone_number': user.phone_number,
+            'birth_date': user.birth_date,
+            'gender': user.gender,
+            'push_agree': user.push_agree,
+            'notification_enabled': user.notification_enabled,
+            'marketing_agree': user.marketing_agree,
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'updated_at': user.updated_at.isoformat() if user.updated_at else None
+        }
 
         return Response({
             'success': True,
             'message': '사용자 프로필 조회 성공',
-            'data': serializer.data
+            'data': user_data
         }, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -159,6 +255,17 @@ def get_user_profile(request):
             'message': f'프로필 조회 실패: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+def validate_profile_update_data(data):
+    errors = {}
+    
+    if 'email' in data:
+        try:
+            validate_email(data['email'])
+        except ValidationError:
+            errors['email'] = "유효한 이메일 주소를 입력해주세요."
+    
+    return errors
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -177,28 +284,41 @@ def update_user_profile(request):
     """
     try:
         user = request.user
-        serializer = UserProfileSerializer(user, data=request.data, partial=True)
-
-        if not serializer.is_valid():
+        
+        # 데이터 검증
+        validation_errors = validate_profile_update_data(request.data)
+        if validation_errors:
             return Response({
                 'success': False,
                 'message': '입력 데이터가 올바르지 않습니다.',
-                'errors': serializer.errors
+                'errors': validation_errors
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # 프로필 업데이트
         with transaction.atomic():
-            updated_user = UserService.update_user_profile(user, serializer.validated_data)
+            updated_user = UserService.update_user_profile(user, request.data)
 
-        # 업데이트된 프로필 반환
-        result_serializer = UserProfileSerializer(updated_user)
+        # 업데이트된 사용자 데이터 준비
+        user_data = {
+            'user_id': updated_user.user_id,
+            'user_name': updated_user.user_name,
+            'email': updated_user.email,
+            'phone_number': updated_user.phone_number,
+            'birth_date': updated_user.birth_date,
+            'gender': updated_user.gender,
+            'push_agree': updated_user.push_agree,
+            'notification_enabled': updated_user.notification_enabled,
+            'marketing_agree': updated_user.marketing_agree,
+            'created_at': updated_user.created_at.isoformat() if updated_user.created_at else None,
+            'updated_at': updated_user.updated_at.isoformat() if updated_user.updated_at else None
+        }
 
         logger.info(f"사용자 프로필 업데이트: {user.user_id}")
 
         return Response({
             'success': True,
             'message': '프로필이 업데이트되었습니다.',
-            'data': result_serializer.data
+            'data': user_data
         }, status=status.HTTP_200_OK)
 
     except Exception as e:

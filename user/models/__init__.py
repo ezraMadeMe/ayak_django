@@ -4,6 +4,7 @@ from .illness import Illness
 from .medication import Medication, MainIngredient
 from .medication_ingredient import MedicationIngredient
 from .user_medical_info import UserMedicalInfo
+from .cache import HospitalCache, DiseaseCache
 
 # 시그널 임포트 (signals.py가 있는 경우)
 try:
@@ -13,5 +14,6 @@ except ImportError:
 
 __all__ = [
     'AyakUser', 'Hospital', 'Illness', 'Medication',
-    'MainIngredient', 'MedicationIngredient', 'UserMedicalInfo'
+    'MainIngredient', 'MedicationIngredient', 'UserMedicalInfo',
+    'HospitalCache', 'HospitalCache'
 ]

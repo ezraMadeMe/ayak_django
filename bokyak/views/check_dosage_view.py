@@ -1,19 +1,13 @@
 # views.py
-from django.db.models import Prefetch
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from django.utils import timezone
-from datetime import datetime, date, timedelta
-import json
-
-from bokyak.models import MedicationRecord, MedicationGroup, MedicationCycle, MedicationDetail
-from bokyak.serializers import MedicationRecordSerializer
-from bokyak.serializers.check_dosage_serializer import TodayMedicationDataSerializer, NextDosageDataSerializer, \
-    BulkRecordResponseSerializer
-from bokyak.serializers.home_screen_serializer import HomeDataSerializer
+from bokyak.models import MedicationRecord, MedicationGroup
 from bokyak.services.check_dosage_service import CheckDosageService
+from bokyak.formatters import (
+    format_medication_record,
+    format_medication_detail,
+    format_medication_group,
+    format_today_medications,
+    format_bulk_record_response
+)
 from user.models import UserMedicalInfo
 
 # views.py (완성된 API 뷰들)
@@ -67,14 +61,11 @@ def get_today_medications(request):
                 if group['group_id'] == group_id
             ]
 
-        # 시리얼라이저를 통한 응답
-        serializer = TodayMedicationDataSerializer(medication_data)
-
         return Response({
             'success': True,
-            'data': serializer.data,
+            'data': format_today_medications(medication_data),
             'message': f'{target_date} 복약 데이터 조회 성공'
-        }, status=status.HTTP_200_OK)
+        })
 
     except Exception as e:
         return Response({
@@ -96,14 +87,11 @@ def get_next_dosage_time(request):
         # 비즈니스 로직 호출
         next_dosage_data = CheckDosageService.get_next_dosage_time(user_id)
 
-        # 시리얼라이저를 통한 응답
-        serializer = NextDosageDataSerializer(next_dosage_data)
-
         return Response({
             'success': True,
-            'data': serializer.data,
+            'data': format_today_medications(next_dosage_data),
             'message': '다음 복약 시간 조회 성공'
-        }, status=status.HTTP_200_OK)
+        })
 
     except Exception as e:
         return Response({
@@ -182,16 +170,13 @@ def get_medication_records(request):
 
         records = list(base_query)
 
-        # 시리얼라이저를 통한 응답
-        serializer = MedicationRecordSerializer(records, many=True)
-
         return Response({
             'success': True,
             'data': {
-                'records': serializer.data,
+                'records': [format_medication_record(record) for record in records],
                 'date_range': {
-                    'start_date': start_date,
-                    'end_date': end_date
+                    'start_date': start_date.isoformat(),
+                    'end_date': end_date.isoformat()
                 },
                 'total_count': len(records),
                 'filters': {
@@ -201,7 +186,7 @@ def get_medication_records(request):
                 }
             },
             'message': f'{len(records)}개의 복약 기록을 조회했습니다.'
-        }, status=status.HTTP_200_OK)
+        })
 
     except Exception as e:
         return Response({
@@ -256,12 +241,9 @@ def create_medication_record(request):
                 notes=data.get('notes', '')
             )
 
-        # 응답 데이터 직렬화
-        serializer = MedicationRecordSerializer(record)
-
         return Response({
             'success': True,
-            'data': serializer.data,
+            'data': format_medication_record(record),
             'message': '복약 기록이 성공적으로 저장되었습니다.'
         }, status=status.HTTP_201_CREATED)
 
@@ -349,17 +331,10 @@ def bulk_create_medication_records(request):
                 records_data=records_data
             )
 
-        # 응답 데이터 직렬화
-        serializer = BulkRecordResponseSerializer(result)
-
-        success_message = f'{result["total_created"]}개 복약 기록이 성공적으로 저장되었습니다.'
-        if result["total_failed"] > 0:
-            success_message += f' ({result["total_failed"]}개 실패)'
-
         return Response({
             'success': True,
-            'data': serializer.data,
-            'message': success_message
+            'data': format_bulk_record_response(result),
+            'message': f'{result["total_created"]}개 복약 기록이 성공적으로 저장되었습니다.'
         }, status=status.HTTP_201_CREATED)
 
     except Exception as e:
@@ -400,34 +375,14 @@ def get_medication_groups(request):
 
         groups = list(groups_query)
 
-        # 그룹 데이터 구성
-        groups_data = []
-        for group in groups:
-            active_cycles = group.medicationcycle_set.filter(
-                is_active=True,
-                cycle_start__lte=timezone.now().date(),
-                cycle_end__gte=timezone.now().date()
-            )
-
-            group_data = {
-                'group_id': group.group_id,
-                'group_name': group.group_name,
-                'reminder_enabled': group.reminder_enabled,
-                'hospital_name': group.medical_info.hospital.hosp_name,
-                'prescription_date': group.prescription.prescription_date,
-                'active_cycles_count': active_cycles.count(),
-                'created_at': group.created_at,
-            }
-            groups_data.append(group_data)
-
         return Response({
             'success': True,
             'data': {
-                'groups': groups_data,
-                'total_count': len(groups_data)
+                'groups': [format_medication_group(group) for group in groups],
+                'total_count': len(groups)
             },
-            'message': f'{len(groups_data)}개의 복약그룹을 조회했습니다.'
-        }, status=status.HTTP_200_OK)
+            'message': f'{len(groups)}개의 복약그룹을 조회했습니다.'
+        })
 
     except Exception as e:
         return Response({
@@ -471,62 +426,27 @@ def get_medication_group_detail(request, group_id):
             'medicationdetail_set__prescription_medication__medication'
         )
 
-        cycles_data = []
-        for cycle in active_cycles:
-            medication_details = cycle.medicationdetail_set.all()
-
-            # 복약 상세 정보 구성
-            details_data = []
-            for detail in medication_details:
-                detail_data = {
-                    'medication_detail_id': detail.id,
-                    'medication': {
-                        'item_seq': detail.prescription_medication.medication.item_seq,
-                        'item_name': detail.prescription_medication.medication.item_name,
-                        'entp_name': detail.prescription_medication.medication.entp_name,
-                        'class_name': detail.prescription_medication.medication.class_name,
-                        'dosage_form': detail.prescription_medication.medication.dosage_form,
-                    },
-                    'actual_dosage_pattern': detail.actual_dosage_pattern,
-                    'remaining_quantity': detail.remaining_quantity,
-                    'patient_adjustments': detail.patient_adjustments,
-                }
-                details_data.append(detail_data)
-
-            cycle_data = {
+        group_data = format_medication_group(group)
+        group_data['active_cycles'] = [
+            {
                 'cycle_id': cycle.id,
                 'cycle_number': cycle.cycle_number,
-                'cycle_start': cycle.cycle_start,
-                'cycle_end': cycle.cycle_end,
+                'cycle_start': cycle.cycle_start.isoformat() if cycle.cycle_start else None,
+                'cycle_end': cycle.cycle_end.isoformat() if cycle.cycle_end else None,
                 'is_active': cycle.is_active,
-                'medication_details': details_data,
+                'medication_details': [
+                    format_medication_detail(detail)
+                    for detail in cycle.medicationdetail_set.all()
+                ]
             }
-            cycles_data.append(cycle_data)
-
-        # 그룹 상세 정보 구성
-        group_detail = {
-            'group_id': group.group_id,
-            'group_name': group.group_name,
-            'reminder_enabled': group.reminder_enabled,
-            'medical_info': {
-                'hospital_name': group.medical_info.hospital.hosp_name,
-                'doctor_name': group.medical_info.hospital.doctor_name,
-                'illness_name': group.medical_info.illness.ill_name,
-            },
-            'prescription': {
-                'prescription_id': group.prescription.prescription_id,
-                'prescription_date': group.prescription.prescription_date,
-            },
-            'active_cycles': cycles_data,
-            'created_at': group.created_at,
-            'updated_at': group.updated_at,
-        }
+            for cycle in active_cycles
+        ]
 
         return Response({
             'success': True,
-            'data': group_detail,
+            'data': group_data,
             'message': '복약그룹 상세 정보 조회 성공'
-        }, status=status.HTTP_200_OK)
+        })
 
     except Exception as e:
         return Response({
@@ -645,8 +565,8 @@ def get_adherence_analytics(request):
         analytics_data = {
             'period': period,
             'date_range': {
-                'start_date': start_date,
-                'end_date': end_date
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat()
             },
             'total_records': len(records),
             'adherence_by_type': {},
@@ -692,13 +612,13 @@ def get_adherence_analytics(request):
         # 순응도 비율 계산
         for med_name, data in analytics_data['medication_adherence'].items():
             if data['total'] > 0:
-                data['adherence_rate'] = data['taken'] / data['total']
+                data['adherence_rate'] = round(data['taken'] / data['total'], 2)
 
         return Response({
             'success': True,
             'data': analytics_data,
             'message': f'{period} 기간 복약 순응도 분석 완료'
-        }, status=status.HTTP_200_OK)
+        })
 
     except Exception as e:
         return Response({
@@ -744,15 +664,16 @@ def get_medication_trends(request):
 
         # 순응도 트렌드 계산
         for week_data in weekly_trends.values():
-            week_data['adherence_rate'] = (
+            week_data['adherence_rate'] = round(
                 week_data['taken'] / week_data['total']
-                if week_data['total'] > 0 else 0
+                if week_data['total'] > 0 else 0,
+                2
             )
 
         trends_data = {
             'date_range': {
-                'start_date': start_date,
-                'end_date': end_date
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat()
             },
             'weekly_trends': weekly_trends,
             'total_records': len(records),
@@ -762,305 +683,10 @@ def get_medication_trends(request):
             'success': True,
             'data': trends_data,
             'message': '복약 트렌드 분석 완료'
-        }, status=status.HTTP_200_OK)
+        })
 
     except Exception as e:
         return Response({
             'success': False,
             'message': f'복약 트렌드 분석 실패: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_today_medications(request):
-    """
-    오늘의 복약 데이터 조회 API
-
-    Query Parameters:
-    - date: YYYY-MM-DD (선택사항, 기본값: 오늘)
-    - group_id: 특정 그룹만 조회 (선택사항)
-    """
-    try:
-        user_id = request.user.user_id
-
-        # 날짜 파라미터 처리
-        target_date_str = request.GET.get('date')
-        if target_date_str:
-            target_date = datetime.strptime(target_date_str, '%Y-%m-%d').date()
-        else:
-            target_date = timezone.now().date()
-
-        # 특정 그룹 필터링
-        group_id = request.GET.get('group_id')
-
-        # 비즈니스 로직 호출
-        medication_data = CheckDosageService.get_today_medication_groups(user_id, target_date)
-
-        # 특정 그룹만 필터링
-        if group_id:
-            medication_data['medication_groups'] = [
-                group for group in medication_data['medication_groups']
-                if group['group_id'] == group_id
-            ]
-
-        # 시리얼라이저를 통한 응답
-        serializer = HomeDataSerializer(medication_data)
-
-        return Response({
-            'success': True,
-            'data': serializer.data,
-            'message': f'{target_date} 복약 데이터 조회 성공'
-        }, status=status.HTTP_200_OK)
-
-    except Exception as e:
-        return Response({
-            'success': False,
-            'message': f'데이터 조회 실패: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_next_dosage_time(request):
-    """
-    다음 복약 시간 조회 API (홈화면에서 현재 시간 기준 다음 복약 시간대 표시용)
-    """
-    try:
-        user_id = request.user.user_id
-        current_time = timezone.now().time()
-        current_date = timezone.now().date()
-
-        # 시간대 우선순위 매핑
-        time_ranges = {
-            'morning': (6, 10),  # 6시-10시
-            'lunch': (11, 14),  # 11시-14시
-            'evening': (17, 20),  # 17시-20시
-            'bedtime': (21, 23),  # 21시-23시
-        }
-
-        # 현재 시간 기준 다음 복약 시간 찾기
-        current_hour = current_time.hour
-        next_dosage_time = None
-
-        for dosage_time, (start_hour, end_hour) in time_ranges.items():
-            if current_hour < start_hour:
-                next_dosage_time = dosage_time
-                break
-
-        # 오늘 남은 복약 시간이 없으면 내일 아침
-        if not next_dosage_time:
-            next_dosage_time = 'morning'
-            current_date = current_date + timezone.timedelta(days=1)
-
-        # 해당 시간대의 복약 데이터 조회
-        medication_data = CheckDosageService.get_today_medication_groups(user_id, current_date)
-
-        next_medications = []
-        for group in medication_data['medication_groups']:
-            if next_dosage_time in group['medications_by_time']:
-                next_medications.extend(group['medications_by_time'][next_dosage_time])
-
-        return Response({
-            'success': True,
-            'data': {
-                'next_dosage_time': next_dosage_time,
-                'target_date': current_date,
-                'medications': next_medications,
-                'total_count': len(next_medications)
-            }
-        }, status=status.HTTP_200_OK)
-
-    except Exception as e:
-        return Response({
-            'success': False,
-            'message': f'다음 복약 시간 조회 실패: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_medication_record(request):
-    """
-    복약 기록 생성 API
-
-    Request Body:
-    {
-        "medication_detail_id": 123,
-        "record_type": "TAKEN",  // TAKEN, MISSED, SKIPPED, SIDE_EFFECT
-        "quantity_taken": 1.0,
-        "notes": "식후 복용",
-        "symptoms": ""  // 부작용 시에만
-    }
-    """
-    try:
-        user_id = request.user.user_id
-        data = request.data
-
-        # 필수 필드 검증
-        required_fields = ['medication_detail_id', 'record_type']
-        for field in required_fields:
-            if field not in data:
-                return Response({
-                    'success': False,
-                    'message': f'필수 필드가 누락되었습니다: {field}'
-                }, status=status.HTTP_400_BAD_REQUEST)
-
-        # 복약 기록 생성
-        record = CheckDosageService.create_medication_record(
-            user_id=user_id,
-            medication_detail_id=data['medication_detail_id'],
-            record_type=data['record_type'],
-            quantity_taken=data.get('quantity_taken', 0.0),
-            notes=data.get('notes', '')
-        )
-
-        # 응답 데이터 직렬화
-        serializer = MedicationRecordSerializer(record)
-
-        return Response({
-            'success': True,
-            'data': serializer.data,
-            'message': '복약 기록이 성공적으로 저장되었습니다.'
-        }, status=status.HTTP_201_CREATED)
-
-    except Exception as e:
-        return Response({
-            'success': False,
-            'message': f'복약 기록 저장 실패: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def bulk_create_medication_records(request):
-    """
-    복수 복약 기록 생성 API (PillGrid에서 여러 약물 선택 시)
-
-    Request Body:
-    {
-        "records": [
-            {
-                "medication_detail_id": 123,
-                "record_type": "TAKEN",
-                "quantity_taken": 1.0,
-                "notes": "아침 복용"
-            },
-            {
-                "medication_detail_id": 124,
-                "record_type": "TAKEN",
-                "quantity_taken": 1.0,
-                "notes": "아침 복용"
-            }
-        ]
-    }
-    """
-    try:
-        user_id = request.user.user_id
-        records_data = request.data.get('records', [])
-
-        if not records_data:
-            return Response({
-                'success': False,
-                'message': '복약 기록 데이터가 없습니다.'
-            }, status=status.HTTP_400_BAD_REQUEST)
-
-        created_records = []
-        failed_records = []
-
-        for record_data in records_data:
-            try:
-                record = CheckDosageService.create_medication_record(
-                    user_id=user_id,
-                    medication_detail_id=record_data['medication_detail_id'],
-                    record_type=record_data['record_type'],
-                    quantity_taken=record_data.get('quantity_taken', 0.0),
-                    notes=record_data.get('notes', '')
-                )
-                created_records.append(MedicationRecordSerializer(record).data)
-
-            except Exception as e:
-                failed_records.append({
-                    'medication_detail_id': record_data.get('medication_detail_id'),
-                    'error': str(e)
-                })
-
-        return Response({
-            'success': True,
-            'data': {
-                'created_records': created_records,
-                'failed_records': failed_records,
-                'total_requested': len(records_data),
-                'total_created': len(created_records),
-                'total_failed': len(failed_records)
-            },
-            'message': f'{len(created_records)}개 복약 기록이 성공적으로 저장되었습니다.'
-        }, status=status.HTTP_201_CREATED)
-
-    except Exception as e:
-        return Response({
-            'success': False,
-            'message': f'복수 복약 기록 저장 실패: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_medication_records(request):
-    """
-    복약 기록 조회 API
-
-    Query Parameters:
-    - start_date: YYYY-MM-DD
-    - end_date: YYYY-MM-DD
-    - group_id: 특정 그룹만 조회
-    - record_type: 특정 기록 타입만 조회 (TAKEN, MISSED, etc.)
-    """
-    try:
-        user_id = request.user.user_id
-
-        # 날짜 범위 파라미터
-        start_date_str = request.GET.get('start_date')
-        end_date_str = request.GET.get('end_date')
-        group_id = request.GET.get('group_id')
-        record_type = request.GET.get('record_type')
-
-        # 기본값: 최근 7일
-        if not start_date_str:
-            start_date = timezone.now().date() - timezone.timedelta(days=7)
-        else:
-            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
-
-        if not end_date_str:
-            end_date = timezone.now().date()
-        else:
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-
-        # 복약 기록 조회 (실제 구현 시 더 복잡한 필터링 로직)
-        records = MedicationRecord.objects.filter(
-            record_date__date__gte=start_date,
-            record_date__date__lte=end_date
-        )
-
-        if record_type:
-            records = records.filter(record_type=record_type)
-
-        # 시리얼라이저를 통한 응답
-        serializer = MedicationRecordSerializer(records, many=True)
-
-        return Response({
-            'success': True,
-            'data': {
-                'records': serializer.data,
-                'date_range': {
-                    'start_date': start_date,
-                    'end_date': end_date
-                },
-                'total_count': len(serializer.data)
-            }
-        }, status=status.HTTP_200_OK)
-
-    except Exception as e:
-        return Response({
-            'success': False,
-            'message': f'복약 기록 조회 실패: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

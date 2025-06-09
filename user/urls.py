@@ -2,12 +2,14 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from .api.apikey import apikey
 from .views import (
     UserViewSet, HospitalViewSet, IllnessViewSet,
     MedicationViewSet, MainIngredientViewSet, UserMedicalInfoViewSet
 )
 from user.views.user_register_view import register_user, login_user, logout_user, get_user_profile, update_user_profile, \
     deactivate_user, check_user_exists
+from .views.user import social_login
 
 app_name = 'user'
 
@@ -23,14 +25,9 @@ urlpatterns = [
     path('', include(router.urls)),
 # 사용자 인증
     path('auth/register/', register_user, name='register_user'),
-    path('auth/login/', login_user, name='login_user'),
+    path('auth/login/', social_login, name='social_login'),
     path('auth/logout/', logout_user, name='logout_user'),
-    # 사용자 프로필
-    path('auth/profile/', get_user_profile, name='get_user_profile'),
-    path('auth/profile/update/', update_user_profile, name='update_user_profile'),
-    # 계정 관리
-    path('auth/deactivate/', deactivate_user, name='deactivate_user'),
-    path('auth/check-exists/', check_user_exists, name='check_user_exists'),
+    path('apikey/', apikey, name='apikey'),
     ]
 # urlpatterns = [
 #     # 카카오 로그인

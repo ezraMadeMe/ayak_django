@@ -1,80 +1,176 @@
 # === 3. 비즈니스 로직 서비스 ===
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from time import timezone
+from typing import Dict, Any, List
+from django.utils import timezone
+from django.db.models import Prefetch, Q
 
-from django.db.models import Prefetch
-
-from bokyak.models import MedicationRecord, MedicationDetail, MedicationCycle, MedicationGroup
-from user.models import Medication, UserMedicalInfo
+from bokyak.models import MedicationRecord, MedicationDetail
+from bokyak.formatters import (
+    format_medication_record,
+    format_medication_detail,
+    format_medication_group
+)
 
 
 class CheckDosageService:
+    """복약 체크 서비스"""
+
     @staticmethod
-    def get_today_medication_groups(user_id: str, target_date: date = None) -> dict:
+    def get_today_medication_groups(user_id: str, target_date: datetime.date = None) -> Dict[str, Any]:
+        """오늘의 복약 그룹 조회"""
+        if not target_date:
+            target_date = timezone.now().date()
 
-        try:
-            # 1. 사용자의 활성 의료 정보 조회
-            user_medical_infos = UserMedicalInfo.objects.filter(
-                user_id=user_id,
-                is_primary=True
-            ).select_related('hospital', 'illness', 'prescription')
+        # 활성화된 복약 주기 조회
+        medication_groups = MedicationDetail.objects.filter(
+            cycle__group__medical_info__user__user_id=user_id,
+            cycle__is_active=True,
+            cycle__start_date__lte=target_date,
+            cycle__end_date__gte=target_date,
+            is_active=True
+        ).select_related(
+            'medication',
+            'cycle__group',
+            'cycle__group__medical_info',
+            'cycle__group__medical_info__hospital',
+            'cycle__group__medical_info__illness'
+        ).prefetch_related(
+            'medicationrecord_set'
+        )
 
-            if not user_medical_infos.exists():
-                return CheckDosageService._empty_response(user_id, target_date)
+        # 그룹별로 데이터 정리
+        groups_data = {}
+        for detail in medication_groups:
+            group = detail.cycle.group
+            group_id = group.id
 
-            result_groups = []
+            if group_id not in groups_data:
+                groups_data[group_id] = {
+                    'group': format_medication_group(group),
+                    'medications_by_time': {
+                        'morning': [],
+                        'lunch': [],
+                        'evening': [],
+                        'bedtime': []
+                    },
+                    'total_medications': 0,
+                    'taken_count': 0,
+                    'missed_count': 0
+                }
 
-            # 2. 각 의료 정보에 대한 복약그룹 조회
-            for medical_info in user_medical_infos:
-                medication_groups = MedicationGroup.objects.filter(
-                    medical_info=medical_info
-                ).prefetch_related(
-                    Prefetch(
-                        'medicationcycle_set',
-                        queryset=MedicationCycle.objects.filter(
-                            is_active=True,
-                            cycle_start__lte=target_date,
-                            cycle_end__gte=target_date
-                        ).prefetch_related(
-                            Prefetch(
-                                'medicationdetail_set',
-                                queryset=MedicationDetail.objects.select_related(
-                                    'prescription_medication__medication'
-                                )
-                            )
-                        )
-                    )
+            # 복약 시간대별로 약물 분류
+            time_slots = detail.get_time_slots()
+            for time_slot in time_slots:
+                groups_data[group_id]['medications_by_time'][time_slot].append(
+                    format_medication_detail(detail)
                 )
+                groups_data[group_id]['total_medications'] += 1
 
-                for group in medication_groups:
-                    active_cycles = group.medicationcycle_set.all()
+            # 복약 기록 확인
+            records = detail.medicationrecord_set.filter(record_date=target_date)
+            for record in records:
+                if record.record_type == 'TAKEN':
+                    groups_data[group_id]['taken_count'] += 1
+                elif record.record_type == 'MISSED':
+                    groups_data[group_id]['missed_count'] += 1
 
-                    if not active_cycles:
-                        continue
+        # 응답 데이터 구성
+        total_medications = sum(g['total_medications'] for g in groups_data.values())
+        total_taken = sum(g['taken_count'] for g in groups_data.values())
+        total_missed = sum(g['missed_count'] for g in groups_data.values())
 
-                    # 가장 최근 활성 주기 선택
-                    active_cycle = active_cycles.first()
-
-                    group_data = CheckDosageService._process_medication_group(
-                        group, active_cycle, target_date
-                    )
-
-                    if group_data:
-                        result_groups.append(group_data)
-
-            return {
-                'user_id': user_id,
-                'today_date': target_date,
-                'medication_groups': result_groups,
-                'overall_stats': CheckDosageService._calculate_overall_stats(result_groups),
-            }
-
-        except Exception as e:
-            print(f"Error in get_today_medication_groups: {str(e)}")
-            return CheckDosageService._empty_response(user_id, target_date)
+        return {
+            'date': target_date.isoformat(),
+            'medication_groups': list(groups_data.values()),
+            'total_medications': total_medications,
+            'taken_count': total_taken,
+            'missed_count': total_missed
+        }
 
     @staticmethod
-    def create_bulk_medication_records(user_id: str, records_data: list):
+    def get_next_dosage_time(user_id: str) -> Dict[str, Any]:
+        """다음 복약 시간 조회"""
+        current_time = timezone.now().time()
+        current_date = timezone.now().date()
+
+        # 시간대 우선순위 매핑
+        time_ranges = {
+            'morning': (6, 10),  # 6시-10시
+            'lunch': (11, 14),  # 11시-14시
+            'evening': (17, 20),  # 17시-20시
+            'bedtime': (21, 23),  # 21시-23시
+        }
+
+        # 현재 시간 기준 다음 복약 시간 찾기
+        current_hour = current_time.hour
+        next_dosage_time = None
+
+        for dosage_time, (start_hour, end_hour) in time_ranges.items():
+            if current_hour < start_hour:
+                next_dosage_time = dosage_time
+                break
+
+        # 오늘 남은 복약 시간이 없으면 내일 아침
+        if not next_dosage_time:
+            next_dosage_time = 'morning'
+            current_date = current_date + timedelta(days=1)
+
+        # 해당 시간대의 복약 데이터 조회
+        medication_data = CheckDosageService.get_today_medication_groups(user_id, current_date)
+
+        next_medications = []
+        for group in medication_data['medication_groups']:
+            if next_dosage_time in group['medications_by_time']:
+                next_medications.extend(group['medications_by_time'][next_dosage_time])
+
+        return {
+            'next_dosage_time': next_dosage_time,
+            'target_date': current_date.isoformat(),
+            'medications': next_medications,
+            'total_count': len(next_medications)
+        }
+
+    @staticmethod
+    def create_medication_record(
+        user_id: str,
+        medication_detail_id: int,
+        record_type: str,
+        quantity_taken: float = 0.0,
+        notes: str = '',
+        symptoms: str = None,
+        record_date: datetime.date = None
+    ) -> MedicationRecord:
+        """복약 기록 생성"""
+        if not record_date:
+            record_date = timezone.now().date()
+
+        # 약물 상세 정보 조회 및 권한 확인
+        medication_detail = MedicationDetail.objects.get(
+            id=medication_detail_id,
+            cycle__group__medical_info__user__user_id=user_id
+        )
+
+        # 복약 기록 생성
+        record = MedicationRecord.objects.create(
+            medication_detail=medication_detail,
+            record_type=record_type,
+            quantity_taken=quantity_taken,
+            notes=notes,
+            symptoms=symptoms,
+            record_date=record_date
+        )
+
+        # 잔여량 업데이트
+        if record_type == 'TAKEN':
+            medication_detail.remaining_quantity = max(0, medication_detail.remaining_quantity - quantity_taken)
+            medication_detail.save()
+
+        return record
+
+    @staticmethod
+    def create_bulk_medication_records(user_id: str, records_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """복수 복약 기록 생성"""
         created_records = []
         failed_records = []
 
@@ -85,205 +181,43 @@ class CheckDosageService:
                     medication_detail_id=record_data['medication_detail_id'],
                     record_type=record_data['record_type'],
                     quantity_taken=record_data.get('quantity_taken', 0.0),
-                    notes=record_data.get('notes', '')
+                    notes=record_data.get('notes', ''),
+                    symptoms=record_data.get('symptoms'),
+                    record_date=record_data.get('record_date')
                 )
                 created_records.append(record)
-
             except Exception as e:
                 failed_records.append({
-                    'medication_detail_id': record_data.get('medication_detail_id'),
+                    'data': record_data,
                     'error': str(e)
                 })
 
         return {
             'created_records': created_records,
             'failed_records': failed_records,
-            'total_requested': len(records_data),
-            'total_created': len(created_records),
-            'total_failed': len(failed_records)
+            'success_count': len(created_records),
+            'fail_count': len(failed_records)
         }
 
     @staticmethod
-    def get_next_dosage_time(user_id: str):
-        current_time = timezone.now()
-        current_date = current_time.date()
-        current_hour = current_time.hour
-
-        # 시간대 범위 정의
-        time_ranges = {
-            'morning': (6, 10),
-            'lunch': (11, 14),
-            'evening': (17, 20),
-            'bedtime': (21, 23),
-        }
-
-        # 다음 복약 시간 찾기
-        next_dosage_time = None
-        target_date = current_date
-
-        for dosage_time, (start_hour, end_hour) in time_ranges.items():
-            if current_hour < start_hour:
-                next_dosage_time = dosage_time
-                break
-
-        # 오늘 남은 시간이 없으면 내일 아침
-        if not next_dosage_time:
-            next_dosage_time = 'morning'
-            target_date = current_date + timedelta(days=1)
-
-        # 해당 시간대의 복약 데이터 조회
-        medication_data = CheckDosageService.get_today_medication_groups(user_id, target_date)
-
-        next_medications = []
-        for group in medication_data['medication_groups']:
-            if next_dosage_time in group['medications_by_time']:
-                next_medications.extend(group['medications_by_time'][next_dosage_time])
-
-        return {
-            'next_dosage_time': next_dosage_time,
-            'target_date': target_date,
-            'medications': next_medications,
-            'total_count': len(next_medications)
-        }
-
-    @staticmethod
-    def _empty_response(user_id: str, target_date: date):
-        return {
-            'user_id': user_id,
-            'today_date': target_date,
-            'medication_groups': [],
-            'overall_stats': {
-                'total_medications': 0,
-                'total_taken': 0,
-                'total_missed': 0,
-                'overall_completion_rate': 0,
-            },
-        }
-
-    @staticmethod
-    def _process_medication_group(group, cycle, target_date):
-        medication_details = cycle.medicationdetail_set.all()
-
-        if not medication_details:
-            return None
-
-        medications_by_time = {}
-        dosage_times = set()
-
-        for detail in medication_details:
-            dosage_pattern = detail.actual_dosage_pattern
-
-            # dosage_pattern 예시: {"morning": {"enabled": true, "quantity": 1, "unit": "mg"}}
-            for time_key, time_data in dosage_pattern.items():
-                if time_data.get('enabled', False):
-                    dosage_times.add(time_key)
-
-                    if time_key not in medications_by_time:
-                        medications_by_time[time_key] = []
-
-                    # 오늘의 복약 기록 확인
-                    today_record = MedicationRecord.objects.filter(
-                        medication_detail=detail,
-                        record_date__date=target_date
-                    ).first()
-
-                    medication_item = {
-                        'medication_detail_id': detail.id,
-                        'medication': {
-                            'item_seq': detail.prescription_medication.medication.item_seq,
-                            'item_name': detail.prescription_medication.medication.item_name,
-                            'entp_name': detail.prescription_medication.medication.entp_name,
-                            'item_image': detail.prescription_medication.medication.item_image,
-                            'class_name': detail.prescription_medication.medication.class_name,
-                            'dosage_form': detail.prescription_medication.medication.dosage_form,
-                            'is_prescription': detail.prescription_medication.medication.is_prescription,
-                        },
-                        'dosage_time': time_key,
-                        'quantity_per_dose': float(time_data.get('quantity', 1)),
-                        'unit': time_data.get('unit', 'mg'),
-                        'special_instructions': time_data.get('instructions', ''),
-                        'is_taken_today': today_record is not None,
-                        'taken_at': today_record.record_date if today_record else None,
-                        'record_type': today_record.record_type if today_record else None,
-                    }
-
-                    medications_by_time[time_key].append(medication_item)
-
-        if not dosage_times:
-            return None
-
-        # 완료 현황 계산
-        completion_status = {}
-        for time_key, medications in medications_by_time.items():
-            total = len(medications)
-            taken = len([m for m in medications if m['is_taken_today']])
-            completion_status[time_key] = {
-                'total': total,
-                'taken': taken,
-                'completion_rate': taken / total if total > 0 else 0
-            }
-
-        # 시간대 정렬
-        time_priority = {'morning': 1, 'lunch': 2, 'evening': 3, 'bedtime': 4, 'prn': 5}
-        sorted_times = sorted(dosage_times, key=lambda x: time_priority.get(x, 99))
-
-        return {
-            'group_id': group.group_id,
-            'group_name': group.group_name,
-            'cycle_id': cycle.id,
-            'cycle_number': cycle.cycle_number,
-            'dosage_times': sorted_times,
-            'medications_by_time': medications_by_time,
-            'completion_status': completion_status,
-        }
-
-
-    @staticmethod
-    def _calculate_overall_stats(groups: list) -> dict:
-        """전체 복약 통계 계산"""
-        total_medications = 0
-        total_taken = 0
-
-        for group in groups:
-            for time_key, status in group['completion_status'].items():
-                total_medications += status['total']
-                total_taken += status['taken']
-
-        return {
-            'total_medications': total_medications,
-            'total_taken': total_taken,
-            'total_missed': total_medications - total_taken,
-            'overall_completion_rate': total_taken / total_medications if total_medications > 0 else 0,
-        }
-
-    @staticmethod
-    def create_medication_record(user_id: str, medication_detail_id: int,
-                                 record_type: str, quantity_taken: float = 0.0,
-                                 notes: str = '') -> MedicationRecord:
-
-        # 1. 권한 확인
-        try:
-            medication_detail = MedicationDetail.objects.select_related(
-                'cycle__group__medical_info__user'
-            ).get(id=medication_detail_id)
-
-            if medication_detail.cycle.group.medical_info.user.user_id != user_id:
-                raise PermissionError("해당 복약 정보에 대한 권한이 없습니다.")
-
-        except MedicationDetail.DoesNotExist:
-            raise ValueError("존재하지 않는 복약 상세 정보입니다.")
-
-        # 2. 오늘 기록 확인/업데이트
-        today = timezone.now().date()
-        record, created = MedicationRecord.objects.update_or_create(
-            medication_detail_id=medication_detail_id,
-            record_date__date=today,
-            defaults={
-                'record_type': record_type,
-                'quantity_taken': quantity_taken,
-                'notes': notes,
-                'record_date': timezone.now(),
-            }
+    def get_medication_records(
+        user_id: str,
+        start_date: datetime.date,
+        end_date: datetime.date,
+        medication_detail_id: int = None
+    ) -> List[Dict[str, Any]]:
+        """복약 기록 조회"""
+        records = MedicationRecord.objects.filter(
+            medication_detail__cycle__group__medical_info__user__user_id=user_id,
+            record_date__range=(start_date, end_date)
         )
 
-        return record
+        if medication_detail_id:
+            records = records.filter(medication_detailid=medication_detail_id)
+
+        records = records.select_related(
+            'medication_detail',
+            'medication_detail__medication'
+        ).order_by('-record_date', '-created_at')
+
+        return [format_medication_record(record) for record in records]

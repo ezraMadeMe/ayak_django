@@ -4,7 +4,6 @@ from django.utils import timezone
 from datetime import timedelta
 
 from bokyak.models.medication_alert import MedicationAlert
-from bokyak.models.medication_cycle import MedicationCycle
 from bokyak.models.medication_detail import MedicationDetail
 from bokyak.models.medication_group import MedicationGroup
 from bokyak.models.prescription import Prescription
@@ -40,15 +39,6 @@ class PrescriptionRenewalService:
                 Prescription.objects.filter(
                     prescription_id=old_prescription_id
                 ).update(is_active=False)
-
-                # 기존 활성 주기들 종료
-                MedicationCycle.objects.filter(
-                    medication_groups__user_medical_info__prescription_id=old_prescription_id,
-                    is_active=True
-                ).update(
-                    is_active=False,
-                    cycle_end=timezone.now().date()
-                )
 
             # 3. 의료 정보 업데이트/생성
             medical_info, created = UserMedicalInfo.objects.get_or_create(
@@ -98,48 +88,7 @@ class PrescriptionRenewalService:
                 'medical_info_id': medical_info.id
             }
 
-    @staticmethod
-    def create_new_cycle(group_id, start_date, medications_data):
-        """새 복약 주기 생성"""
-        from django.db import transaction
 
-        with transaction.atomic():
-            # 최대 처방일수 계산
-            max_duration = max([med['duration_days'] for med in medications_data])
-            cycle_end_date = start_date + timedelta(days=max_duration)
-
-            # 기존 주기 개수 확인하여 cycle_number 설정
-            existing_cycles_count = MedicationCycle.objects.filter(
-                group_id=group_id
-            ).count()
-
-            # 새 주기 생성
-            new_cycle = MedicationCycle.objects.create(
-                group_id=group_id,
-                cycle_number=existing_cycles_count + 1,
-                cycle_start=start_date,
-                cycle_end=cycle_end_date,
-                is_active=True
-            )
-
-            # 각 처방약물에 대한 상세 정보 생성
-            prescription_medications = PrescriptionMedication.objects.filter(
-                prescription__medicationgroup__group_id=group_id
-            )
-
-            for presc_med in prescription_medications:
-                medication_detail = MedicationDetail.objects.create(
-                    cycle_id=new_cycle.id,
-                    prescription_medication_id=presc_med.id,
-                    actual_dosage_pattern=presc_med.standard_dosage_pattern,
-                    remaining_quantity=presc_med.cycle_total_quantity,
-                    patient_adjustments={}
-                )
-
-                # 기본 알림 설정 생성
-                PrescriptionRenewalService.create_default_alerts(medication_detail.id)
-
-            return new_cycle
 
     @staticmethod
     def create_default_alerts(medication_detail_id):

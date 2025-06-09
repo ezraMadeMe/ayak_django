@@ -51,8 +51,10 @@ DEBUG = True
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '172.30.1.57',
+    '172.30.1.79',
     '0.0.0.0',
+    '192.168.0.13',
+    '172.30.1.50'
 ]
 
 # Application definition
@@ -71,6 +73,8 @@ INSTALLED_APPS = [
     # Third party apps
     "rest_framework",
     'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    "rest_framework_api_key",
     'django_filters',
     'corsheaders',
     'drf_spectacular',
@@ -83,6 +87,8 @@ INSTALLED_APPS = [
 
 # ROOT_URLCONF = 'config.urls'
 ROOT_URLCONF = 'ayak.urls'
+APPEND_SLASH=False
+DEBUG = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -93,7 +99,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-    'yakun.middleware.RequestLoggingMiddleware',  # 커스텀 로깅 미들웨어
+    # 'yakun.middleware.RequestLoggingMiddleware',  # 커스텀 로깅 미들웨어
 ]
 
 SOCIALACCOUNT_PROVIDERS ={
@@ -139,9 +145,6 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
     }
 }
 # Password validation
@@ -189,9 +192,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',  # 기본 권한을 AllowAny로 변경
     ],
     'DEFAULT_PAGINATION_CLASS': 'common.pagination.StandardResultsSetPagination',
     'PAGE_SIZE': 20,
@@ -201,6 +205,15 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# JWT 설정 추가
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 # Celery 설정
@@ -264,25 +277,12 @@ LOGGING = {
 }
 
 # CORS 설정 (Flutter에서 API 호출 시 필요)
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
     "http://172.30.1.57:8000",
     "http://172.30.1.57:8080",
-]
-
-CORS_ALLOW_ALL_ORIGINS = True  # 개발용 (운영에서는 False로 설정)
-
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
 ]
 
 CORS_ALLOW_METHODS = [
@@ -294,9 +294,20 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'access-control-allow-origin',
+]
+
 # API 버전 설정
 API_VERSION = 'v1'
 
-
-
-
+AUTH_USER_MODEL = 'user.AyakUser'

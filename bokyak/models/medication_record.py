@@ -31,8 +31,8 @@ class MedicationRecord(BaseModel):
     medication_detail = models.ForeignKey(
         MedicationDetail,
         on_delete=models.CASCADE,
-        related_name='records',
-        verbose_name='복약 상세'
+        related_name='medication_records',
+        help_text='복약 상세'
     )
     record_type = models.CharField(
         max_length=15,
@@ -53,6 +53,15 @@ class MedicationRecord(BaseModel):
         blank=True,
         verbose_name='기록 내용'
     )
+    effectiveness_score = models.IntegerField(
+        null=True, 
+        blank=True,
+        verbose_name='효과 점수'
+    )
+    tags = models.JSONField(
+        default=list,
+        verbose_name='태그'
+    )
 
     def __str__(self):
-        return f"{self.medication_detail.cycle.group.medical_info.user.user_name} - {self.medication_detail.cycle.group.group_name} - {self.record_date} - {self.medication_detail.prescription_medication.medication.item_name} - {self.get_record_type_display()}"
+        return f'{self.medication_detail.prescription_medication.medication.item_name} - {self.record_date}'

@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models import UniqueConstraint
 from rest_framework.exceptions import ValidationError
 
-# from bokyak.models.prescription import Prescription
+# from bokyak.models import Prescription
 from common.models.base_model import BaseModel
 from user.models.hospital import Hospital
 from user.models.illness import Illness
@@ -41,13 +41,10 @@ class UserMedicalInfo(BaseModel):
     )
     prescription = models.ForeignKey(
         'bokyak.Prescription',
-        on_delete=models.CASCADE,
-        related_name='user_prescription',
-        verbose_name='처방전(is_active=True인 처방이 업데이트)'
-    )
-    is_primary = models.BooleanField(
-        default=False,
-        verbose_name='즐겨찾기 여부'
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='medical_infos',
+        help_text='처방전'
     )
 
     def clean(self):
@@ -68,5 +65,5 @@ class UserMedicalInfo(BaseModel):
                     )
 
     def __str__(self):
-        return f"{self.user.user_name} - {self.hospital.hosp_name} - {self.illness.ill_name}"
+        return f"{self.user.user_nickname} - {self.hospital.hosp_name} - {self.illness.ill_name}"
 

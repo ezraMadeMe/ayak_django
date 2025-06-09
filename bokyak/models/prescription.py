@@ -22,6 +22,10 @@ class Prescription(BaseModel, CodeGeneratorMixin):
         editable=False,
         verbose_name='처방전 코드'
     )
+    prescription_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name='동일 처방전 갱신 횟수'
+    )
     prescription_date = models.DateField(
         verbose_name='처방일/내원일'
     )
@@ -45,6 +49,13 @@ class Prescription(BaseModel, CodeGeneratorMixin):
             self.prescription_id = self.generate_unique_code(
                 Prescription, 'prescription_id', length=12
             )
+
+        # 이전 처방전이 존재하는 경우 prescription_count 증가
+        if self.previous_prescription is not None:
+            self.prescription_count = self.previous_prescription.prescription_count + 1
+        else:
+            # 최초 처방전인 경우 0으로 설정
+            self.prescription_count = 0
         super().save(*args, **kwargs)
 
     def update_prescription(self, new_prescription_data):

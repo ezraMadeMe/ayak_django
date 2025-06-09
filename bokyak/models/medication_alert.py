@@ -1,7 +1,6 @@
 from django.db import models
-
-from bokyak.models.medication_detail import MedicationDetail
 from common.models.base_model import BaseModel
+from bokyak.models.medication_detail import MedicationDetail
 
 
 class MedicationAlert(BaseModel):
@@ -20,8 +19,8 @@ class MedicationAlert(BaseModel):
     medication_detail = models.ForeignKey(
         MedicationDetail,
         on_delete=models.CASCADE,
-        related_name='alerts',
-        verbose_name='복약 상세'
+        related_name='medication_alerts',
+        help_text='복약 상세'
     )
     alert_type = models.CharField(
         max_length=15,
@@ -41,4 +40,4 @@ class MedicationAlert(BaseModel):
     )
 
     def __str__(self):
-        return f"{self.medication_detail.cycle.group.group_name} - {self.get_alert_type_display()} ({self.alert_time})"
+        return f'{self.medication_detail} - {self.alert_time}'

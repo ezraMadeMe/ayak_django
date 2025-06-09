@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from bokyak.models.medication_cycle import MedicationCycle
+from bokyak.models.medication_group import MedicationGroup
 from bokyak.models.prescription_medication import PrescriptionMedication
 from common.models.base_model import BaseModel
 
@@ -15,28 +15,37 @@ class MedicationDetail(BaseModel):
         verbose_name_plural = '복약 상세들'
         constraints = [
             UniqueConstraint(
-                fields=['cycle', 'prescription_medication'],
-                name='unique_cycle_medication'
+                fields=['group', 'prescription_medication'],
+                name='unique_group_medication'
             )
         ]
-
-    cycle = models.ForeignKey(
-        MedicationCycle,
-        on_delete=models.CASCADE,
+    group = models.ForeignKey(
+        MedicationGroup,
+        on_delete=models.PROTECT,
         related_name='medication_details',
-        verbose_name='복약 주기'
+        help_text='복약 그룹'
     )
     prescription_medication = models.ForeignKey(
         PrescriptionMedication,
-        on_delete=models.CASCADE,
-        related_name='group_prescription',
-        verbose_name='처방전 내 세부복약'
+        on_delete=models.PROTECT,
+        related_name='medication_details',
+        help_text='처방약'
     )
     # 주기별 변화 정보만
     actual_dosage_pattern = models.JSONField(
-        blank=True,
         null=True,
-        help_text="템플릿과 다른 경우에만 저장"
+        blank=True,
+        help_text='환자 실제 복용 패턴',
+    )
+    actual_start_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='실제 복용 시작일'
+    )
+    actual_end_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='실제 복용 종료일'
     )
     remaining_quantity = models.PositiveIntegerField(
         verbose_name='잔여량'
@@ -47,15 +56,12 @@ class MedicationDetail(BaseModel):
         help_text="환자별 용량 조정, 복용 시간 변경 등"
     )
 
+
     @property
     def effective_dosage_pattern(self):
         """실제 적용되는 복약 패턴"""
-        return self.actual_dosage_pattern or self.prescription_medication.standard_dosage_pattern
+        return self.actual_dosage_pattern or self.prescription_medication
 
-    # @property
-    # def medication(self):
-    #     """역호환성을 위한 속성"""
-    #     return self.medication_template.medication
 
     def save(self, *args, **kwargs):
         # if not self.remaining_quantity:
@@ -63,6 +69,6 @@ class MedicationDetail(BaseModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.cycle.group.medical_info.user.user_name} - {self.cycle.group.group_name} - {self.cycle.group.prescription.prescription_date} - {self.prescription_medication.medication.item_name} 잔여량 {self.remaining_quantity}정"
+        return f"{self.prescription_medication.prescription_id}"
 
 

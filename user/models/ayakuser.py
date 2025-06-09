@@ -14,11 +14,30 @@ class AyakUser(AbstractUser):
         verbose_name = '사용자'
         verbose_name_plural = '사용자들'
 
-    user_id = models.CharField(max_length=50, unique=True, primary_key=True)
-    user_name = models.CharField(max_length=100)
-    join_date = models.DateTimeField(auto_now_add=True)
-    push_agree = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
+    user_id = models.CharField(
+        primary_key=True,
+        max_length=50,
+        unique=True,
+        verbose_name='사용자 아이디'
+    )
+    user_name = models.CharField(
+        max_length=50,
+        verbose_name='사용자 이름',
+        blank=True,
+        null=True
+    )
+    join_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='가입일자'
+    )
+    push_agree = models.BooleanField(
+        default=False,
+        verbose_name='푸시알림 동의'
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name='활성상태'
+    )
 
     # 소셜 로그인 관련 필드
     social_provider = models.CharField(max_length=20, blank=True, null=True)  # 'google', 'kakao', 'apple' 등
@@ -61,7 +80,7 @@ class AyakUser(AbstractUser):
 
     # AbstractUser의 username 필드를 user_id로 대체
     USERNAME_FIELD = 'user_id'
-    REQUIRED_FIELDS = ['user_name']
+    REQUIRED_FIELDS = ['username', ]
 
     class Meta:
         db_table = 'ayak_users'

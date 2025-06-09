@@ -1,6 +1,6 @@
 from django.db import models
-
 from common.models.base_model import BaseModel
+from user.models.medication import Medication
 from user.models.main_ingredient import MainIngredient
 
 
@@ -12,43 +12,47 @@ class MedicationIngredient(BaseModel):
         db_table = 'medication_ingredients'
         verbose_name = '의약품 주성분'
         verbose_name_plural = '의약품 주성분들'
-        unique_together = [['medication', 'ingredient']]
+        unique_together = [['medication', 'main_ingredient']]
         indexes = [
             models.Index(fields=['medication'], name='idx_med_ingr_med'),
-            models.Index(fields=['ingredient'], name='idx_med_ingr_ingr'),
+            models.Index(fields=['main_ingredient'], name='idx_med_ingr_ingr'),
         ]
 
     medication = models.ForeignKey(
-        'Medication',  # 기존 Medication 모델 참조
+        Medication,
         on_delete=models.CASCADE,
-        related_name='ingredient_details',
-        verbose_name='의약품'
+        related_name='medication_ingredients',
+        help_text='약물'
     )
-
-    ingredient = models.ForeignKey(
+    main_ingredient = models.ForeignKey(
         MainIngredient,
-        on_delete=models.CASCADE,
-        related_name='medication_uses',
-        verbose_name='주성분'
+        on_delete=models.PROTECT,
+        related_name='medication_ingredients',
+        help_text='성분'
     )
-
-    # 해당 의약품에서의 함량 정보 (원본 데이터와 다를 수 있음)
-    content_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=6,
-        verbose_name='함량'
+    amount = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        help_text='함량'
     )
-
-    content_unit = models.CharField(
-        max_length=20,
-        verbose_name='함량 단위'
+    unit = models.CharField(
+        max_length=20, 
+        help_text='단위'
     )
-
-    is_active_ingredient = models.BooleanField(
-        default=True,
-        verbose_name='주성분 여부',
+    is_main = models.BooleanField(
+        default=True, 
         help_text='False인 경우 부형제나 첨가제'
+    )
+    # 추가 정보
+    ingredient_role = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="성분역할"
+    )  # 주성분, 부형제, 첨가제 등
+    notes = models.TextField(
+        blank=True,
+        verbose_name="비고"
     )
 
     def __str__(self):
-        return f"{self.medication.item_name} - {self.ingredient.display_name} ({self.content_amount}{self.content_unit})"
+        return f'{self.medication.item_name} - {self.ingredient.ingredient_name}'

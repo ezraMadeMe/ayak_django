@@ -1,0 +1,33 @@
+# Django & DRF
+Django>=4.2.0,<5.0.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.3.0
+django-filter>=23.0
+djangorestframework-simplejwt==5.3.1
+
+# Database
+psycopg2-binary>=2.9.9  # PostgreSQL adapter
+
+# Image Processing
+Pillow>=10.0.0  # Python Imaging Library
+
+# API Documentation
+drf-yasg>=1.21.7  # Swagger/OpenAPI
+
+# Development & Debug
+django-debug-toolbar>=4.2.0
+pytest>=7.4.0
+pytest-django>=4.5.0
+black>=23.0.0  # Code formatting
+isort>=5.12.0  # Import sorting
+flake8>=6.1.0  # Code linting
+
+# Utilities
+python-dotenv>=1.0.0  # Environment variables
+requests>=2.31.0  # HTTP requests
+pytz>=2023.3  # Timezone support
+chardet>=5.2.0  # Character encoding detection
+
+# Security
+django-environ>=0.11.0
+django-guardian>=2.4.0  # Object level permissions 
